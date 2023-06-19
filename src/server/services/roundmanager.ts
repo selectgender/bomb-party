@@ -76,19 +76,20 @@ export class RoundManager implements OnStart {
 	private async waitForDeaths(): Promise<void> {
 		return new Promise((resolve, _, onCancel) => {
 			const connections: RBXScriptConnection[] = [];
-
 			onCancel(() => connections.forEach((connection) => connection.Disconnect()));
+
+			const remove = (player: Player) => {
+				this.alive.remove(this.alive.indexOf(player));
+				if (this.alive.size() === 0) resolve();
+			};
+
+			connections.push(Players.PlayerRemoving.Connect((player) => remove(player)));
 
 			this.alive.forEach(async (player) => {
 				if (!player.Character) return;
 
 				const character = await promiseR6(player.Character);
-				connections.push(
-					character.Humanoid.Died.Once(() => {
-						this.alive.remove(this.alive.indexOf(player));
-						if (this.alive.size() === 0) resolve();
-					}),
-				);
+				connections.push(character.Humanoid.Died.Once(() => remove(player)));
 			});
 		});
 	}
@@ -140,5 +141,9 @@ export class RoundManager implements OnStart {
 		});
 	}
 
-	private respawnAlive = () => this.alive.forEach((player) => player.LoadCharacter());
+	private respawnAlive = () =>
+		this.alive.forEach((player) => {
+			if (!player.Character) return;
+			player.LoadCharacter();
+		});
 }
