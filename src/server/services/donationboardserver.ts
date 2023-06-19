@@ -6,6 +6,8 @@ import { Events } from "server/network";
 import { DonationBoardData } from "shared/types/interfaces/donationBoardData";
 import { donationOptions } from "shared/types/constants/donationOptions";
 
+type UpdateBoardArgument = Player | "all";
+
 const dataKey = "#&(DMD!)A!)@$";
 
 @Service()
@@ -31,9 +33,10 @@ export class DonationBoard implements OnStart {
 
 		const [success, err] = pcall(() => {
 			this.donations.UpdateAsync<number, number>(`playerid_${playerId}`, (previousData) => {
-				if (previousData) {
+				if (previousData !== undefined) {
 					return previousData + donatedAmount;
 				} else {
+					warn(`updating the value failed apparently`);
 					return donatedAmount;
 				}
 			});
@@ -47,7 +50,7 @@ export class DonationBoard implements OnStart {
 	}
 
 	getName(id: number) {
-		if (this.nameCache[id]) return this.nameCache[id];
+		if (this.nameCache[id] !== undefined) return this.nameCache[id];
 
 		const [success, result] = pcall(() => Players.GetNameFromUserIdAsync(id));
 
@@ -61,7 +64,7 @@ export class DonationBoard implements OnStart {
 	}
 
 	getIcon(id: number) {
-		if (this.iconCache[id]) return this.iconCache[id];
+		if (this.iconCache[id] !== undefined) return this.iconCache[id];
 
 		const [thumbnailURL, didReturn] = Players.GetUserThumbnailAsync(
 			id,
@@ -77,33 +80,50 @@ export class DonationBoard implements OnStart {
 		return "";
 	}
 
-	updateBoard() {
+	updateBoard(players: UpdateBoardArgument) {
 		const sorted = this.donations.GetSortedAsync(false, this.displayAmount, 1);
 		if (!sorted) return;
 
 		const page = sorted.GetCurrentPage();
 		const clientDataPacket: DonationBoardData[] = [];
 
+		// this is like.. extremely stupid... but its the way roblox-ts is and you apparently cant get the length of page and do a numerical loop LIKE A NORMAL PERSON
 		for (const [rank, data] of ipairs(page)) {
-			const userId = tonumber(data.key);
-			if (!userId) continue;
+			const [result] = string.gsub(data.key, "playerid_", "");
+			const userId = tonumber(result);
+			if (userId === undefined) continue;
 
 			const username = this.getName(userId);
 			const icon = this.getIcon(userId);
 			const amountDonated = data.value as number;
 
-			clientDataPacket.push({
-				name: username,
-				icon: icon,
-				amount: amountDonated,
-				rank: rank,
-			});
+			clientDataPacket.push(
+				identity<DonationBoardData>({
+					name: username,
+					icon: icon,
+					amount: amountDonated,
+					rank: rank,
+				}),
+			);
 		}
 
-		Events.donationBoardRefresh.broadcast(clientDataPacket);
+		if (players === "all") {
+			Events.donationBoardRefresh.broadcast(clientDataPacket);
+		} else {
+			Events.donationBoardRefresh.fire(players, clientDataPacket);
+		}
 	}
 
 	onStart() {
-		MarketplaceService.ProcessReceipt = this.processReceipt;
+		MarketplaceService.ProcessReceipt = (receiptInfo: ReceiptInfo) => this.processReceipt(receiptInfo);
+
+		Players.PlayerAdded.Connect((player) => this.updateBoard(player));
+
+		// this is literally just a while true loop I just have to appease eslint haha
+		for (;;) {
+			this.updateBoard("all");
+			// task.wait(30);
+			task.wait(10);
+		}
 	}
 }

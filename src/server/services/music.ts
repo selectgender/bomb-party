@@ -1,38 +1,45 @@
-import store from "server/store"
-import { Workspace, TweenService } from "@rbxts/services"
-import { OnStart, Service } from "@flamework/core"
+import { Workspace, TweenService } from "@rbxts/services";
+import { OnStart, Service } from "@flamework/core";
+
+const id = (id: string) => `rbxassetid://${id}`;
+
+const lobbyMusicId = "1844764917";
+const difficultyMusicIds = ["1839389776", "1844928288", "1835376228", "1846560262", "7028518546", "1837301451"];
 
 @Service()
 export class Music implements OnStart {
-  transitionInfo = new TweenInfo(3)
-  soundInstance;
+	transitionInfo = new TweenInfo(3);
+	songId = id(lobbyMusicId);
+	soundInstance;
 
-  constructor() {
-    this.soundInstance = new Instance("Sound")
-    this.soundInstance.Looped = true
-    this.soundInstance.Parent = Workspace
-  }
+	constructor() {
+		this.soundInstance = new Instance("Sound");
+		this.soundInstance.Looped = true;
+		this.soundInstance.Parent = Workspace;
+	}
 
-  onStart() {
-    store.changed.connect(async (state, prevState) => {
-      if (state.music.songId === prevState.music.songId) return
+	private async changeMusicId(song: string) {
+		const oldInstance = this.soundInstance;
 
-      const oldInstance = this.soundInstance
+		const newSound = new Instance("Sound");
+		newSound.Looped = true;
+		newSound.SoundId = id(song);
+		newSound.Volume = 0;
+		newSound.Parent = Workspace;
+		newSound.Play();
+		this.soundInstance = newSound;
 
-      this.soundInstance = new Instance("Sound")
-      this.soundInstance.Looped = true
-      this.soundInstance.SoundId = state.music.songId
-      this.soundInstance.Volume = 0
-      this.soundInstance.Parent = Workspace
-      this.soundInstance.Play()
+		TweenService.Create(newSound, this.transitionInfo, { Volume: 0.5 }).Play();
+		TweenService.Create(oldInstance, this.transitionInfo, { Volume: 0 }).Play();
+		task.wait(this.transitionInfo.Time);
+		oldInstance.Destroy();
+	}
 
-      TweenService.Create(this.soundInstance, this.transitionInfo, { Volume: 0.5 }).Play()
-      TweenService.Create(oldInstance, this.transitionInfo, { Volume: 0 }).Play()
-      task.wait(this.transitionInfo.Time)
-      oldInstance.Destroy()
-    })
+	public setMusicDifficulty = (difficulty: number) => this.changeMusicId(difficultyMusicIds[difficulty - 1]);
+	public setLobbyMusic = () => this.changeMusicId(lobbyMusicId);
 
-    this.soundInstance.SoundId = store.getState().music.songId
-    this.soundInstance.Play()
-  }
+	onStart() {
+		this.soundInstance.SoundId = this.songId;
+		this.soundInstance.Play();
+	}
 }

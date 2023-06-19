@@ -1,34 +1,22 @@
-import Rodux from "@rbxts/rodux"
-import { BombRainActions, bombRainReducer, bombRainState, BombRainState } from "./reducers/bombrain"
+import Rodux from "@rbxts/rodux";
 import { DeathsActions, deathsReducer, deathsState, DeathsState } from "./reducers/deaths";
-import { DifficultyActions, difficultyReducer, difficultyState, DifficultyState } from "./reducers/difficulty";
 import { MapsActions, mapsReducer, mapsState, MapsState } from "./reducers/maps";
-import { MusicActions, musicReducer, musicState, MusicState } from "./reducers/music";
 
 export interface State {
-  bombrain: BombRainState
-  deaths: DeathsState
-  difficulty: DifficultyState
-  maps: MapsState
-  music: MusicState
+	deaths: DeathsState;
+	maps: MapsState;
 }
 
-export type Actions = BombRainActions | DeathsActions | DifficultyActions | MapsActions | MusicActions
+export type Actions = DeathsActions | MapsActions;
 
 const initialState = identity<State>({
-  bombrain: bombRainState,
-  deaths: deathsState,
-  difficulty: difficultyState,
-  maps: mapsState,
-  music: musicState
-})
+	deaths: deathsState,
+	maps: mapsState,
+});
 
 const reducer = Rodux.combineReducers({
-  bombrain: bombRainReducer,
-  deaths: deathsReducer,
-  difficulty: difficultyReducer,
-  maps: mapsReducer,
-  music: musicReducer
-})
+	deaths: deathsReducer,
+	maps: mapsReducer,
+});
 
-export default new Rodux.Store<State, Actions>(reducer, initialState)
+export default new Rodux.Store<State, Actions>(reducer, initialState);

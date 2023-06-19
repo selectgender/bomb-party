@@ -1,14 +1,16 @@
 import { Networking } from "@flamework/networking";
-import { DonationBoardData } from "shared/types/interfaces/donationBoardData"
+import { DonationBoardData } from "shared/types/interfaces/donationBoardData";
+
+type DonationBoardPacket = DonationBoardData[];
 
 // if literally anything needs to be in here we have a problem
 interface ServerEvents {}
 
 // Server -> Client events
 interface ClientEvents {
-  announcement(text: string): void
-  difficultyChange(difficulty: number): void
-  donationBoardRefresh(rankingData: DonationBoardData[]): void
+	announcement: (text: string) => void;
+	difficultyChange: (difficulty: number) => void;
+	donationBoardRefresh: (packet: DonationBoardPacket) => void;
 }
 
 // im not repeating myself... DONT PUT ANYTHING IN HERE
