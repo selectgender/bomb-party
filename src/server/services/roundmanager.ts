@@ -12,6 +12,7 @@ import { promiseR6 } from "@rbxts/promise-character";
 
 @Service()
 export class RoundManager implements OnStart {
+	interval = 30;
 	automatic = true;
 	alive: Player[] = [];
 	endRound = new Signal();
@@ -56,19 +57,19 @@ export class RoundManager implements OnStart {
 
 			resolve();
 		})
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThenCall(() => this.bombRain.setDifficulty(2))
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThenCall(() => this.bombRain.setDifficulty(3))
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThenCall(() => this.bombRain.setDifficulty(4))
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThenCall(() => this.bombRain.setDifficulty(5))
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThenCall(() => this.bombRain.setDifficulty(6))
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThen(() => this.border.startBorder())
-			.andThenCall(Promise.delay, 20)
+			.andThenCall(Promise.delay, this.interval)
 			.andThen(() => this.border.stopBorder());
 	}
 
