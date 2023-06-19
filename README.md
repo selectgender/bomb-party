@@ -48,7 +48,8 @@ play 5 games, and then pit the winners of the 5 games together for the finals
 - [ ] add indicator for when bombs about to detonate
 - [ ] make sure the bomb doesnt check ALL models :sob: only ones with humanoids
 - [ ] separate frostburn ice into chunks so that they dont fucking eviscerate
-- [ ] make the game automatically run, and make sure you can enable and disable automation with commands
+- [ ] make character transluscesnt during reentry mode
+- [ ] add voting
 
 - [ ] implement coints
 - [ ] implement store
