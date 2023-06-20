@@ -1,23 +1,27 @@
 import { Dependency } from "@flamework/core";
 import { CommandContext } from "@rbxts/cmdr";
+import { Option } from "@rbxts/rust-classes";
+import { Maps } from "server/services/maps";
 import { Music } from "server/services/music";
-import store from "server/store";
 
 export = function (_: CommandContext, map: string) {
+	const maps = Dependency<Maps>();
+
 	if (map === "none") {
-		store.dispatch({ type: "setMap", map: "none" });
+		maps.changeMap(Option.none());
 		Dependency<Music>().setLobbyMusic();
 		return;
 	}
 
-	const currentMap = store.getState().maps.map;
+	const currentMap = maps.map;
 
-	if (currentMap === map) {
-		store.dispatch({ type: "setMap", map: "none" });
-		task.wait(0.1);
-		store.dispatch({ type: "setMap", map: map });
-		return;
-	}
+	if (currentMap.isSome())
+		if (currentMap.unwrap() === map) {
+			maps.changeMap(Option.none());
+			task.wait(0.1);
+			maps.changeMap(Option.some(map));
+			return;
+		}
 
-	store.dispatch({ type: "setMap", map: map });
+	maps.changeMap(Option.some(map));
 };

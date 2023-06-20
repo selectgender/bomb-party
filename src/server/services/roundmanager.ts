@@ -5,10 +5,12 @@ import Signal from "@rbxts/signal";
 import { BombRain } from "./bombrain";
 import { Music } from "./music";
 import { Border } from "./border";
+import { Maps } from "./maps";
 
 import { maps } from "shared/types/constants/maps";
 import store from "server/store";
 import { promiseR6 } from "@rbxts/promise-character";
+import { Option } from "@rbxts/rust-classes";
 
 @Service()
 export class RoundManager implements OnStart {
@@ -17,7 +19,7 @@ export class RoundManager implements OnStart {
 	alive: Player[] = [];
 	endRound = new Signal();
 
-	constructor(private bombRain: BombRain, private music: Music, private border: Border) {}
+	constructor(private bombRain: BombRain, private music: Music, private border: Border, private maps: Maps) {}
 	onStart() {
 		Workspace.lobby.reentry.reenterbutton.trigger.Touched.Connect((part) => {
 			if (!part.Parent?.IsA("Model")) return;
@@ -49,7 +51,7 @@ export class RoundManager implements OnStart {
 
 			const mapsNoNone = maps;
 			maps.remove(maps.indexOf("none"));
-			store.dispatch({ type: "setMap", map: maps[math.random(1, mapsNoNone.size() - 1)] });
+			this.maps.changeMap(Option.some(maps[math.random(1, mapsNoNone.size() - 1)]));
 
 			this.bombRain.setDifficulty(1);
 			this.teleportAlive();
@@ -112,7 +114,7 @@ export class RoundManager implements OnStart {
 		this.endRound.Fire();
 		this.border.stopBorder();
 		this.bombRain.stopBombRain();
-		store.dispatch({ type: "setMap", map: "none" });
+		this.maps.changeMap(Option.none());
 		this.music.setLobbyMusic();
 		store.dispatch({ type: "clearDeaths" });
 

@@ -9,6 +9,7 @@ export const maps = [
 	"scaffold",
 	"candy",
 	"enchanted",
+	"volcano",
 
 	// secret
 	"turbine",
