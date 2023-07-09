@@ -1,5 +1,3 @@
-// TODO: add background blur
-
 import Roact, { Portal } from "@rbxts/roact"
 import { Lighting } from "@rbxts/services"
 import { Spring, useMotor, useMountEffect } from "@rbxts/pretty-roact-hooks"

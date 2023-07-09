@@ -1,5 +1,6 @@
 import { Networking } from "@flamework/networking";
 import { DonationBoardData } from "shared/types/interfaces/donationBoardData";
+import { networkVotingActions } from "./types/types/networkVotingActions";
 
 type DonationBoardPacket = DonationBoardData[];
 
@@ -11,6 +12,8 @@ interface ClientEvents {
 	announcement: (text: string) => void;
 	difficultyChange: (difficulty: number) => void;
 	donationBoardRefresh: (packet: DonationBoardPacket) => void;
+
+	votingReducer: (action: networkVotingActions) => void;
 }
 
 // im not repeating myself... DONT PUT ANYTHING IN HERE

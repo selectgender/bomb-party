@@ -1,5 +1,5 @@
-import Roact, { Binding } from "@rbxts/roact";
 import { useEventListener } from "@rbxts/pretty-roact-hooks";
+import Roact, { Binding } from "@rbxts/roact";
 import { useState } from "@rbxts/roact-hooked";
 import { Events } from "client/network";
 import Profile, { Props } from "./profile";

@@ -7,8 +7,7 @@ import { Events } from "server/network";
 
 @Service()
 export class BombRain {
-	// exists because there isnt really an elegant way to intertwine this toggle with the subscribe method
-	// also because you can disable the bombrain while its still disabled
+	// exists because you can disable the bombrain while its still disabled
 	enabled = false;
 	difficulty = 1;
 

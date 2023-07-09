@@ -6,20 +6,21 @@ import { BombRain } from "./bombrain";
 import { Music } from "./music";
 import { Border } from "./border";
 import { Maps } from "./maps";
+import { Voting } from "./voting";
 
-import { maps } from "shared/types/constants/maps";
 import store from "server/store";
 import { promiseR6 } from "@rbxts/promise-character";
 import { Option } from "@rbxts/rust-classes";
+import options from "server/settings";
 
 @Service()
 export class RoundManager implements OnStart {
-	interval = 30;
-	automatic = true;
+	automatic = !options.DEBUG_MODE;
+	interval = options.change_interval;
 	alive: Player[] = [];
 	endRound = new Signal();
 
-	constructor(private bombRain: BombRain, private music: Music, private border: Border, private maps: Maps) {}
+	constructor(private bombRain: BombRain, private music: Music, private border: Border, private maps: Maps, private voting: Voting) {}
 	onStart() {
 		Workspace.lobby.reentry.reenterbutton.trigger.Touched.Connect((part) => {
 			if (!part.Parent?.IsA("Model")) return;
@@ -31,12 +32,21 @@ export class RoundManager implements OnStart {
 	}
 
 	private startLoop() {
+		if (options.DEBUG_MODE)
+			warn(
+				"DEBUG MODE IS ENABLED!!!! NO AUTOMATION AND SOME WEIRD STUFF HAPPEN, IF YOU WANT NORMAL STUFF JUST CHANGE IT IN server/settings",
+			);
 		while (this.automatic) {
-			// will add intermission/voting eventually... but I AINT DOIN ALLAT RN
-			this.intermission().expect();
-			this.alive = Players.GetPlayers();
-			Promise.race([this.startRound(), this.waitForDeaths(), this.prematureEndWait()]).expect();
-			this.resetRound();
+			Promise.race([
+				this.intermission()
+					.andThen(() => this.alive = Players.GetPlayers())
+					.andThen(() => {
+						// maybe find alternative method?
+						Promise.race([this.startRound(), this.waitForDeaths(), this.prematureEndWait()]).expect();
+					})
+					.andThen(() => this.resetRound()),
+				this.prematureEndWait()
+			]).await()
 		}
 	}
 
@@ -48,10 +58,6 @@ export class RoundManager implements OnStart {
 			onCancel(() => {
 				this.resetRound();
 			});
-
-			const mapsNoNone = maps;
-			maps.remove(maps.indexOf("none"));
-			this.maps.changeMap(Option.some(maps[math.random(1, mapsNoNone.size() - 1)]));
 
 			this.bombRain.setDifficulty(1);
 			this.teleportAlive();
@@ -71,7 +77,7 @@ export class RoundManager implements OnStart {
 			.andThenCall(() => this.bombRain.setDifficulty(6))
 			.andThenCall(Promise.delay, this.interval)
 			.andThen(() => this.border.startBorder())
-			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(Promise.delay, this.border.duration)
 			.andThen(() => this.border.stopBorder());
 	}
 
@@ -86,7 +92,6 @@ export class RoundManager implements OnStart {
 			};
 
 			connections.push(Players.PlayerRemoving.Connect((player) => remove(player)));
-
 			this.alive.forEach(async (player) => {
 				if (!player.Character) return;
 
@@ -99,14 +104,18 @@ export class RoundManager implements OnStart {
 	// arbitrarily waits a few seconds for now
 	private async intermission(): Promise<void> {
 		return new Promise((resolve) => {
+			this.voting.StartVoting()
 			task.wait(10);
+			this.maps.changeMap(Option.some(this.voting.StopVotingAndReturnResult()));
 			resolve();
 		});
 	}
 
 	private async prematureEndWait(): Promise<void> {
 		return new Promise((resolve) => {
-			this.endRound.Once(() => resolve());
+			this.endRound.Once(() => {
+				resolve()
+			});
 		});
 	}
 
@@ -139,8 +148,18 @@ export class RoundManager implements OnStart {
 	// temporary command b4 I get my stuff together and make a list of alive ppl
 	public teleportAlive() {
 		this.alive.forEach((player) => {
-			if (player.Character) this.teleportPlayer(player.Character);
+			if (player.Character) {
+				player.LoadCharacter();
+				task.wait(1);
+				this.teleportPlayer(player.Character);
+			}
 		});
+	}
+
+	public teleportAll() {
+		Players.GetPlayers().forEach((player) => {
+			if (player.Character) this.teleportPlayer(player.Character)
+		})
 	}
 
 	private respawnAlive = () =>

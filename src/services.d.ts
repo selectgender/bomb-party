@@ -15,6 +15,31 @@ interface Workspace extends Instance {
 				trigger: Part;
 			};
 		};
+		voting: Model & {
+			board1: Model & {
+				Part: Part;
+				image: Part;
+				mapname: Part;
+				votecounter: Part;
+			};
+			board2: Model & {
+				Part: Part;
+				image: Part;
+				mapname: Part;
+				votecounter: Part;
+			};
+			board3: Model & {
+				Part: Part;
+				image: Part;
+				mapname: Part;
+				votecounter: Part;
+			};
+			pads: Model & {
+				pad1: Part;
+				pad2: Part;
+				pad3: Part;
+			}
+		}
 	};
 }
 
