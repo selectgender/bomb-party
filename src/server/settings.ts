@@ -1,5 +1,5 @@
 const options = {
-    DEBUG_MODE: false,
+    DEBUG_MODE: true,
     change_interval: 30,
 }
 

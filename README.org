@@ -1,7 +1,5 @@
-* TODO
-create a staggered effect by making a table of bindings and for looping it on a hook
-
-* credits - me: all the scripting
+* credits
+- me: all the scripting
 - pnmpki: bomb 3d model and ALL the maps and game cover and thumbnail and motivation
 - 4dyline: coin art and motivation
 

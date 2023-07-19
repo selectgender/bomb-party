@@ -1,7 +1,8 @@
-import { Workspace, ContextActionService } from "@rbxts/services"
+import { Workspace, ContextActionService, RunService } from "@rbxts/services"
 import { BaseComponent, Component } from "@flamework/components";
 import { OnStart } from "@flamework/core";
 import { promiseR6 } from "@rbxts/promise-character"
+import { Character } from "client/controllers/character";
 
 interface Attributes {
   dashSpeed: number
@@ -36,17 +37,19 @@ export class Movement extends BaseComponent<Attributes, Model> implements OnStar
 
     if (humanoid.Sit) { this.canDash = true; return; }
     if (!camera) { this.canDash = true; return; }
-    
+
     const rootpart = character.HumanoidRootPart
-    const lookvector = camera.CFrame.LookVector
 
     humanoid.Sit = true
-    rootpart.ApplyImpulse(lookvector.mul(this.mass * this.attributes.dashSpeed))
+
+    const [x, _y, _z] = camera.CFrame.ToOrientation()
+    const direction = CFrame.fromAxisAngle(Vector3.xAxis, x).VectorToWorldSpace(humanoid.MoveDirection)
+    rootpart.ApplyImpulse(direction.mul(this.mass * this.attributes.dashSpeed))
 
     task.wait(this.attributes.dashCooldown)
     this.canDash = true
   }
-  
+
   async onStart() {
     const character = await promiseR6(this.instance)
     const humanoid = character.Humanoid
