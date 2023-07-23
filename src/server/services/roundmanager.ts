@@ -12,6 +12,7 @@ import store from "server/store";
 import { promiseR6 } from "@rbxts/promise-character";
 import { Option } from "@rbxts/rust-classes";
 import options from "server/settings";
+import { Events } from "server/network";
 
 @Service()
 export class RoundManager implements OnStart {
@@ -20,7 +21,13 @@ export class RoundManager implements OnStart {
 	alive: Player[] = [];
 	endRound = new Signal();
 
-	constructor(private bombRain: BombRain, private music: Music, private border: Border, private maps: Maps, private voting: Voting) {}
+	constructor(
+		private bombRain: BombRain,
+		private music: Music,
+		private border: Border,
+		private maps: Maps,
+		private voting: Voting,
+	) {}
 	onStart() {
 		Workspace.lobby.reentry.reenterbutton.trigger.Touched.Connect((part) => {
 			if (!part.Parent?.IsA("Model")) return;
@@ -39,14 +46,14 @@ export class RoundManager implements OnStart {
 		while (this.automatic) {
 			Promise.race([
 				this.intermission()
-					.andThen(() => this.alive = Players.GetPlayers())
+					.andThen(() => (this.alive = Players.GetPlayers()))
 					.andThen(() => {
 						// maybe find alternative method?
 						Promise.race([this.startRound(), this.waitForDeaths(), this.prematureEndWait()]).expect();
 					})
 					.andThen(() => this.resetRound()),
-				this.prematureEndWait()
-			]).await()
+				this.prematureEndWait(),
+			]).await();
 		}
 	}
 
@@ -64,21 +71,13 @@ export class RoundManager implements OnStart {
 			this.bombRain.beginBombRain();
 
 			resolve();
-		})
-			.andThenCall(Promise.delay, this.interval)
-			.andThenCall(() => this.bombRain.setDifficulty(2))
-			.andThenCall(Promise.delay, this.interval)
-			.andThenCall(() => this.bombRain.setDifficulty(3))
-			.andThenCall(Promise.delay, this.interval)
-			.andThenCall(() => this.bombRain.setDifficulty(4))
-			.andThenCall(Promise.delay, this.interval)
-			.andThenCall(() => this.bombRain.setDifficulty(5))
-			.andThenCall(Promise.delay, this.interval)
-			.andThenCall(() => this.bombRain.setDifficulty(6))
-			.andThenCall(Promise.delay, this.interval)
-			.andThen(() => this.border.startBorder())
-			.andThenCall(Promise.delay, this.border.duration)
-			.andThen(() => this.border.stopBorder());
+		}).andThen(() => {
+			Promise.each([2, 3, 4, 5, 6], (value, _index) => {
+				this.bombRain.setDifficulty(value);
+				Events.updateStatus.broadcast(`difficulty ${value}`, this.interval);
+				return Promise.delay(this.interval);
+			}).await();
+		});
 	}
 
 	private async waitForDeaths(): Promise<void> {
@@ -104,8 +103,9 @@ export class RoundManager implements OnStart {
 	// arbitrarily waits a few seconds for now
 	private async intermission(): Promise<void> {
 		return new Promise((resolve) => {
-			this.voting.StartVoting()
-			task.wait(10);
+			this.voting.StartVoting();
+			Events.updateStatus.broadcast("intermission", options.intermission_length);
+			task.wait(options.intermission_length);
 			this.maps.changeMap(Option.some(this.voting.StopVotingAndReturnResult()));
 			resolve();
 		});
@@ -114,7 +114,7 @@ export class RoundManager implements OnStart {
 	private async prematureEndWait(): Promise<void> {
 		return new Promise((resolve) => {
 			this.endRound.Once(() => {
-				resolve()
+				resolve();
 			});
 		});
 	}
@@ -158,8 +158,8 @@ export class RoundManager implements OnStart {
 
 	public teleportAll() {
 		Players.GetPlayers().forEach((player) => {
-			if (player.Character) this.teleportPlayer(player.Character)
-		})
+			if (player.Character) this.teleportPlayer(player.Character);
+		});
 	}
 
 	private respawnAlive = () =>

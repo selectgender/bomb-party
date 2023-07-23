@@ -1,6 +1,7 @@
 const options = {
-    DEBUG_MODE: true,
-    change_interval: 30,
-}
+	DEBUG_MODE: false,
+	change_interval: 30,
+	intermission_length: 10,
+};
 
-export default options
+export default options;

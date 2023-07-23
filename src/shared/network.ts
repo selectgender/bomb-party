@@ -14,6 +14,8 @@ interface ClientEvents {
 	donationBoardRefresh: (packet: DonationBoardPacket) => void;
 
 	votingReducer: (action: networkVotingActions) => void;
+
+	updateStatus: (title: string, time: number) => void;
 }
 
 // im not repeating myself... DONT PUT ANYTHING IN HERE
