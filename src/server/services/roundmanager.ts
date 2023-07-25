@@ -61,6 +61,11 @@ export class RoundManager implements OnStart {
 	// and yes... this is the only method that works
 	// im so sorry
 	private async startRound(): Promise<void> {
+		const setDifficulty = (value: number) => {
+			this.bombRain.setDifficulty(value);
+			Events.updateStatus.broadcast(`difficulty ${value}`, this.interval);
+		}
+
 		return new Promise<void>((resolve, _, onCancel) => {
 			onCancel(() => {
 				this.resetRound();
@@ -71,13 +76,21 @@ export class RoundManager implements OnStart {
 			this.bombRain.beginBombRain();
 
 			resolve();
-		}).andThen(() => {
-			Promise.each([2, 3, 4, 5, 6], (value, _index) => {
-				this.bombRain.setDifficulty(value);
-				Events.updateStatus.broadcast(`difficulty ${value}`, this.interval);
-				return Promise.delay(this.interval);
-			}).await();
-		});
+		})
+			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(() => setDifficulty(2))
+			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(() => setDifficulty(3))
+			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(() => setDifficulty(4))
+			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(() => setDifficulty(5))
+			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(() => setDifficulty(6))
+			.andThenCall(Promise.delay, this.interval)
+			.andThenCall(() => this.border.startBorder())
+			.andThenCall(Promise.delay, this.border.duration)
+			.andThenCall(() => this.border.stopBorder())
 	}
 
 	private async waitForDeaths(): Promise<void> {
